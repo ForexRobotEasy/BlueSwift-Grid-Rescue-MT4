@@ -1,0 +1,79 @@
+mql5
+// BlueSwift Grid Rescue MT4
+// Developer's Site: forexroboteasy.com
+// Developed by: Forex Robot Easy Team
+
+// Include necessary libraries and define global variables
+#include <Trade\Trade.mqh>
+#include <Arrays\ArrayObject.mqh>
+
+CTrade trade; // Trade object
+bool isInitialized = false; // Flag to check if the robot is initialized
+
+// Define grid parameters
+double gridStep = 0.01; // Grid step size
+int gridLevels = 10; // Number of grid levels
+
+// Define trading function
+void TradeGrid()
+{
+   // Calculate grid levels
+   double price = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double startLevel = price - (gridLevels / 2) * gridStep;
+   
+   for(int i = 0; i < gridLevels; i++)
+   {
+      double levelPrice = startLevel + i * gridStep;
+      
+      // Check if there are no open trades at the current level
+      if(!trade.PositionSelect(_Symbol))
+      {
+         // Place a buy trade at the current level
+         trade.BuyStop(gridStep, levelPrice, levelPrice - gridStep, 0, 0);
+         
+         // Place a sell trade at the current level
+         trade.SellStop(gridStep, levelPrice, levelPrice + gridStep, 0, 0);
+      }
+   }
+}
+
+// Initialize the robot
+int OnInit()
+{
+   if(!isInitialized)
+   {
+      // Enable automated trading
+      trade.SetExpertMagicNumber(123456);
+      trade.SetDeviationInPoints(10);
+      trade.SetTypeFilling(ENUM_ORDER_FILLING_RETURN);
+      
+      isInitialized = true;
+   }
+   
+   return(INIT_SUCCEEDED);
+}
+
+// Handle tick events
+void OnTick()
+{
+   TradeGrid(); // Execute the grid trading strategy
+}
+
+// Handle deinitialization
+void OnDeinit(const int reason)
+{
+   // Close all open trades before deinitialization
+   trade.PositionCloseAll();
+}
+
+//+------------------------------------------------------------------+
+//| Script program start function                                    |
+//+------------------------------------------------------------------+
+void OnStart()
+{
+   // Run the robot indefinitely
+   while(true)
+   {
+      Sleep(1000); // Sleep for 1 second
+   }
+}
